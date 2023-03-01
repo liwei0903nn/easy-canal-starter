@@ -34,7 +34,7 @@
 
 ```
 easy-canal:
-  host: 10.0.193.3
+  host: 127.0.0.1
   port: 11111 
   destination: example
   username: 
