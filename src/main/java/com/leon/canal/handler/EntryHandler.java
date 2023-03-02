@@ -31,6 +31,7 @@ public class EntryHandler implements CommandLineRunner {
             // 创建链接
             CanalConnector connector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
             log.info("canal 启动成功...");
+            Runtime.getRuntime().addShutdownHook(new Thread(connector::disconnect));
             int batchSize = 10;
             try {
                 connector.connect();
