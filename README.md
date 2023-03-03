@@ -1,6 +1,6 @@
 ```
 # easy-canal
-基于spring boot 的 canal 客户端, 可以快速接入canal client。
+基于spring boot 的 canal 客户端, 一分钟快速接入canal client。
 ```
 
 使用方法:
@@ -41,11 +41,11 @@ easy-canal:
   password:
 ```
 
-3. 继承 CommonHandler 类, 使用Component标记对应的数据库表名, 在对应的函数完成自己的业务逻辑
+3. 继承 CommonHandler 类, 使用 CanalHandler 标记对应的数据库表名, 在对应的函数完成自己的业务逻辑
 
 ```
 @Data
-public class Hospital {
+public class UserInfo {
    
     private Long id;
 
@@ -57,14 +57,14 @@ public class Hospital {
 
 
 ```
-@Component("testdb.hospital")  // 注意这里需要使用 数据库.表名
+@CanalHandler("testdb.hospital")  // 注意这里需要使用 数据库.表名
 @Slf4j
-public class HospitalHandler extends CommonHandler<Hospital> {
+public class HospitalHandler extends CommonHandler<UserInfo> {
 
 
     // 新增
     @Override
-    public boolean onInsert(Hospital newData) {
+    public boolean onInsert(UserInfo newData) {
         return true;
     }
 
@@ -77,13 +77,13 @@ public class HospitalHandler extends CommonHandler<Hospital> {
      */
 
     @Override
-    public boolean onUpdate(Hospital oldData, Hospital newData) {
+    public boolean onUpdate(UserInfo oldData, UserInfo newData) {
         return true;
     }
 
     // 删除
     @Override
-    public boolean onDelete(Hospital data) {
+    public boolean onDelete(UserInfo data) {
         return true;
     }
 
