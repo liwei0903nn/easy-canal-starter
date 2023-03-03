@@ -4,13 +4,16 @@ import com.alibaba.otter.canal.client.CanalConnector;
 import com.alibaba.otter.canal.client.CanalConnectors;
 import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.protocol.Message;
+import com.leon.canal.annotations.CanalHandler;
 import com.leon.canal.config.EasyCanalConfig;
 import com.leon.canal.handler.base.CommonHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 
+import javax.annotation.PostConstruct;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +25,21 @@ public class EntryHandler implements CommandLineRunner {
     private EasyCanalConfig canalConfig;
 
     @Autowired
-    private Map<String, CommonHandler> handlerMap;
+    private List<CommonHandler> handlerList;
+
+    private Map<String, CommonHandler> tableHanlderMap = new HashMap<>();
+
+    @PostConstruct
+    public void initTableMap() {
+        for (CommonHandler commonHandler : handlerList) {
+            CanalHandler canalHandler = commonHandler.getClass().getAnnotation(CanalHandler.class);
+            if (canalHandler == null || canalHandler.tableName().isEmpty()) {
+                continue;
+            }
+
+            tableHanlderMap.put(canalHandler.tableName(), commonHandler);
+        }
+    }
 
 
     @Override
@@ -85,9 +102,9 @@ public class EntryHandler implements CommandLineRunner {
             String tableName = entry.getHeader().getTableName();
 
 
-            CommonHandler handler = handlerMap.get(dbName + "." + tableName);
+            CommonHandler handler = tableHanlderMap.get(dbName + "." + tableName);
             if (handler == null) {
-                log.debug("暂不处理, tableName={}", dbName);
+                log.debug("暂不处理, dbName={}, tableName={}", dbName, tableName);
                 continue;
             }
 
