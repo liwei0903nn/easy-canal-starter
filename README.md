@@ -57,7 +57,7 @@ public class UserInfo {
 
 
 ```
-@CanalHandler("testdb.hospital")  // 注意这里需要使用 数据库.表名
+@CanalHandler("testdb.user_info")  // 注意这里需要使用 数据库.表名
 @Slf4j
 public class HospitalHandler extends CommonHandler<UserInfo> {
 
