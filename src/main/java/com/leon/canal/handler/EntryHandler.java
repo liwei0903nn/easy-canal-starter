@@ -52,6 +52,7 @@ public class EntryHandler implements CommandLineRunner {
             int batchSize = 10;
             try {
                 connector.connect();
+                connector.subscribe();
                 connector.rollback();
                 while (true) {
                     Message message = connector.getWithoutAck(batchSize); // 获取指定数量的数据
