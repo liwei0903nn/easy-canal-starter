@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.net.InetSocketAddress;
@@ -65,9 +64,9 @@ public class EntryHandler implements ApplicationRunner {
                     disconnect();
                 }
 
-                // 等待重连
+
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(10000);  // 等待重连
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
