@@ -12,14 +12,13 @@ import javax.annotation.Resource;
 @EnableConfigurationProperties({EasyCanalConfig.class})
 public class EasyCanalAutoConfiguration {
 
-    @Resource
-    private EasyCanalConfig canalConfig;
+//    @Resource
+//    private EasyCanalConfig canalConfig;
 
     @Bean
     @ConditionalOnMissingBean(EntryHandler.class)
     public EntryHandler entryHandler() {
         EntryHandler entryHandler = new EntryHandler();
-        entryHandler.setCanalConfig(canalConfig);
         return entryHandler;
     }
 

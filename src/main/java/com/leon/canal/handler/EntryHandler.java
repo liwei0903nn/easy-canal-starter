@@ -9,7 +9,9 @@ import com.leon.canal.config.EasyCanalConfig;
 import com.leon.canal.handler.base.CommonHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.net.InetSocketAddress;
@@ -19,13 +21,18 @@ import java.util.Map;
 
 
 @Slf4j
-public class EntryHandler implements CommandLineRunner {
+public class EntryHandler implements ApplicationRunner {
 
+    public static final int BATCH_SIZE = 10;
 
+    @Autowired
     private EasyCanalConfig canalConfig;
 
     @Autowired
     private List<CommonHandler> handlerList;
+
+
+    private CanalConnector canalConnector;
 
     private Map<String, CommonHandler> tableHanlderMap = new HashMap<>();
 
@@ -39,44 +46,59 @@ public class EntryHandler implements CommandLineRunner {
 
             tableHanlderMap.put(canalHandler.tableName(), commonHandler);
         }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::disconnect));
     }
 
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(ApplicationArguments args) throws Exception {
         new Thread((() -> {
-            // 创建链接
-            CanalConnector connector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
-            log.info("canal 启动成功...");
-            Runtime.getRuntime().addShutdownHook(new Thread(connector::disconnect));
-            int batchSize = 10;
-            try {
-                connector.connect();
-                connector.subscribe();
-                connector.rollback();
-                while (true) {
-                    Message message = connector.getWithoutAck(batchSize); // 获取指定数量的数据
-                    long batchId = message.getId();
-                    int size = message.getEntries().size();
-                    if (batchId == -1 || size == 0) {
-                        Thread.sleep(1000);
-                        connector.ack(batchId); // 提交确认
-                        continue;
-                    }
-
-                    handleEntry(message.getEntries());// 数据处理
-                    connector.ack(batchId); // 提交确认
-
-                    // connector.rollback(batchId); // 处理失败, 回滚数据
+            this.canalConnector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
+            do {
+                try {
+                    initConnector(); // 创建链接
+                    consumeData(); // 消费数据
+                } catch (Exception e) {
+                    log.error("canal 异常, canalConfig={}", canalConfig, e);
+                } finally {
+                    disconnect();
                 }
 
-            } catch (Exception e) {
-                log.error("canal 异常", e);
-            } finally {
-                connector.disconnect();
-            }
+                // 等待重连
+                try {
+                    Thread.sleep(10000);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            } while (true);
+
+
         }), "canal-work").start();
 
+    }
+
+    private void consumeData() throws InterruptedException {
+        while (true) {
+            Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
+            long batchId = message.getId();
+            int size = message.getEntries().size();
+            if (batchId == -1 || size == 0) {
+                Thread.sleep(1000);
+                canalConnector.ack(batchId); // 提交确认
+                continue;
+            }
+
+            handleEntry(message.getEntries());// 数据处理
+            canalConnector.ack(batchId); // 提交确认
+        }
+    }
+
+    private void initConnector() {
+        canalConnector.connect();
+        canalConnector.subscribe();
+        canalConnector.rollback();
+        log.info("canal 启动成功...");
     }
 
     // 数据处理
@@ -115,7 +137,7 @@ public class EntryHandler implements CommandLineRunner {
                         handler.delete(rowData);
                     } else if (eventType == CanalEntry.EventType.INSERT) { // 新增
                         handler.insert(rowData);
-                    } else { // 修改
+                    } else if (eventType == CanalEntry.EventType.UPDATE) { // 修改
                         handler.update(rowData);
                     }
                 } catch (Exception e) {
@@ -126,11 +148,12 @@ public class EntryHandler implements CommandLineRunner {
         }
     }
 
-    public EasyCanalConfig getCanalConfig() {
-        return canalConfig;
+    public void disconnect() {
+        if (canalConnector != null) {
+            log.info("canal disconnect...");
+            canalConnector.disconnect();
+        }
     }
 
-    public void setCanalConfig(EasyCanalConfig canalConfig) {
-        this.canalConfig = canalConfig;
-    }
+
 }
