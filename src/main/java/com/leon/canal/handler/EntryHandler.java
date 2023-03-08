@@ -22,6 +22,8 @@ import java.util.Map;
 @Slf4j
 public class EntryHandler implements ApplicationRunner {
 
+    private boolean stop = false;
+
     public static final int BATCH_SIZE = 10;
 
     @Autowired
@@ -46,7 +48,7 @@ public class EntryHandler implements ApplicationRunner {
             tableHanlderMap.put(canalHandler.tableName(), commonHandler);
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(this::disconnect));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
     }
 
 
@@ -70,7 +72,7 @@ public class EntryHandler implements ApplicationRunner {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            } while (true);
+            } while (!stop);
 
 
         }), "canal-work").start();
@@ -152,6 +154,12 @@ public class EntryHandler implements ApplicationRunner {
             log.info("canal disconnect...");
             canalConnector.disconnect();
         }
+    }
+
+    public void stop() {
+        log.info("canal stop...");
+        stop = true;
+        disconnect();
     }
 
 
