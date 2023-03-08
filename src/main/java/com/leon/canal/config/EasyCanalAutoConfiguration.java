@@ -6,14 +6,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.Resource;
-
 @Configuration
 @EnableConfigurationProperties({EasyCanalConfig.class})
 public class EasyCanalAutoConfiguration {
-
-//    @Resource
-//    private EasyCanalConfig canalConfig;
 
     @Bean
     @ConditionalOnMissingBean(EntryHandler.class)
