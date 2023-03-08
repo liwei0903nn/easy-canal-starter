@@ -80,7 +80,7 @@ public class EntryHandler implements ApplicationRunner {
     }
 
     private void consumeData() throws InterruptedException {
-        while (true) {
+        while (!stop) {
             Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
             long batchId = message.getId();
             int size = message.getEntries().size();
