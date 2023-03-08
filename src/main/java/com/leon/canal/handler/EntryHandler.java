@@ -26,7 +26,6 @@ public class EntryHandler implements ApplicationRunner {
     private Boolean stop = false;
 
     private Object doneLock = new Object();
-    private boolean done = false;
 
     public static final int BATCH_SIZE = 10;
 
@@ -57,7 +56,7 @@ public class EntryHandler implements ApplicationRunner {
 
     @PreDestroy
     public void destroy() {
-        stop();
+        new Thread(this::stop).start();
     }
 
 
@@ -90,30 +89,29 @@ public class EntryHandler implements ApplicationRunner {
 
     private void consumeData() throws InterruptedException {
         while (true) {
+            long batchId = -1;
+            int size = 0;
             synchronized (doneLock) {
                 if (stop) {
                     return;
                 }
 
-                done = false;
-
                 Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
-                long batchId = message.getId();
-                int size = message.getEntries().size();
-                if (batchId == -1 || size == 0) {
-                    canalConnector.ack(batchId); // 提交确认
-                    done = true;
-                    doneLock.notifyAll();
-                    Thread.sleep(1000);
-                    continue;
+                batchId = message.getId();
+                size = message.getEntries().size();
+
+                if (batchId != -1 && size > 0) {
+                    handleEntry(message.getEntries());// 数据处理
                 }
 
-                handleEntry(message.getEntries());// 数据处理
                 canalConnector.ack(batchId); // 提交确认
-                done = true;
-                doneLock.notifyAll();
+            }
+
+            if (batchId == -1 || size == 0) {
+                Thread.sleep(1000);
             }
         }
+
     }
 
     private void initConnector() {
@@ -180,19 +178,11 @@ public class EntryHandler implements ApplicationRunner {
     public void stop() {
         log.info("canal ready stop...");
         synchronized (doneLock) {
-            while (!done) {
-                try {
-                    log.info("waiting done.....");
-                    doneLock.wait(3000);
-                } catch (Exception e) {
-                    log.error("canal stop error...", e);
-                }
-            }
-
             log.info("canal stop...");
             stop = true;
             disconnect();
         }
+
     }
 
 
