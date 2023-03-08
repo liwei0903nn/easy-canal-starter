@@ -13,6 +13,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +23,10 @@ import java.util.Map;
 @Slf4j
 public class EntryHandler implements ApplicationRunner {
 
-    private boolean stop = false;
+    private Boolean stop = false;
+
+    private Object doneLock = new Object();
+    private boolean done = false;
 
     public static final int BATCH_SIZE = 10;
 
@@ -48,7 +52,12 @@ public class EntryHandler implements ApplicationRunner {
             tableHanlderMap.put(canalHandler.tableName(), commonHandler);
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+//        Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+    }
+
+    @PreDestroy
+    public void destroy() {
+        stop();
     }
 
 
@@ -80,18 +89,30 @@ public class EntryHandler implements ApplicationRunner {
     }
 
     private void consumeData() throws InterruptedException {
-        while (!stop) {
-            Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
-            long batchId = message.getId();
-            int size = message.getEntries().size();
-            if (batchId == -1 || size == 0) {
-                Thread.sleep(1000);
-                canalConnector.ack(batchId); // 提交确认
-                continue;
-            }
+        while (true) {
+            synchronized (doneLock) {
+                if (stop) {
+                    return;
+                }
 
-            handleEntry(message.getEntries());// 数据处理
-            canalConnector.ack(batchId); // 提交确认
+                done = false;
+
+                Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
+                long batchId = message.getId();
+                int size = message.getEntries().size();
+                if (batchId == -1 || size == 0) {
+                    canalConnector.ack(batchId); // 提交确认
+                    done = true;
+                    doneLock.notifyAll();
+                    Thread.sleep(1000);
+                    continue;
+                }
+
+                handleEntry(message.getEntries());// 数据处理
+                canalConnector.ack(batchId); // 提交确认
+                done = true;
+                doneLock.notifyAll();
+            }
         }
     }
 
@@ -157,9 +178,21 @@ public class EntryHandler implements ApplicationRunner {
     }
 
     public void stop() {
-        log.info("canal stop...");
-        stop = true;
-        disconnect();
+        log.info("canal ready stop...");
+        synchronized (doneLock) {
+            while (!done) {
+                try {
+                    log.info("waiting done.....");
+                    doneLock.wait(3000);
+                } catch (Exception e) {
+                    log.error("canal stop error...", e);
+                }
+            }
+
+            log.info("canal stop...");
+            stop = true;
+            disconnect();
+        }
     }
 
 
