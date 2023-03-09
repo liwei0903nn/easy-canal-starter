@@ -12,7 +12,7 @@ public abstract class CommonHandler<T> {
 
     public boolean insert(CanalEntry.RowData rowData) {
         T data = convert(rowData.getAfterColumnsList());
-        return onDelete(data);
+        return onInsert(data);
     }
 
 

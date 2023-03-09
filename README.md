@@ -18,7 +18,7 @@
         <dependency>
             <groupId>io.github.liwei0903nn</groupId>
             <artifactId>easy-canal</artifactId>
-            <version>3.18.0-SNAPSHOP</version>
+            <version>3.20.0-SNAPSHOP</version>
             <exclusions>
                 <exclusion>
                     <artifactId>fastjson</artifactId>
