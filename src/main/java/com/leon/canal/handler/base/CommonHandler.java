@@ -35,7 +35,7 @@ public abstract class CommonHandler<T> {
 
     public abstract boolean onDelete(T data);
 
-    private Class<?> getEClass() {
+    private Class<T> getEClass() {
         if (tClass != null) {
             return tClass;
         }
@@ -45,15 +45,11 @@ public abstract class CommonHandler<T> {
         ParameterizedType pt = (ParameterizedType) superClassType;
         Type[] genTypeArr = pt.getActualTypeArguments();
         Type genType = genTypeArr[0];
-        if (false == genType instanceof Class) {
-            return Object.class;
-        }
-
-        tClass = (Class<Object>) genType;
+        tClass = (Class<T>) genType;
         return tClass;
     }
 
-    private Class<?> tClass;
+    private Class<T> tClass;
 
     private T convert(List<CanalEntry.Column> columns) {
         JSONObject jsonObject = new JSONObject();
@@ -61,7 +57,7 @@ public abstract class CommonHandler<T> {
             jsonObject.put(column.getName(), column.getValue());
         }
 
-        return (T) jsonObject.toJavaObject(getEClass());
+        return jsonObject.toJavaObject(getEClass());
     }
 
 }
