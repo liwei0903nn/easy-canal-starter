@@ -63,7 +63,6 @@ public class EntryHandler implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         new Thread((() -> {
-            this.canalConnector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
             do {
                 try {
                     initConnector(); // 创建链接
@@ -73,7 +72,6 @@ public class EntryHandler implements ApplicationRunner {
                 } finally {
                     disconnect();
                 }
-
 
                 try {
                     Thread.sleep(10000);  // 等待重连
@@ -89,36 +87,51 @@ public class EntryHandler implements ApplicationRunner {
 
     private void consumeData() throws InterruptedException {
         while (true) {
-            long batchId = -1;
-            int size = 0;
+            boolean emptyMsg = false;
             synchronized (doneLock) {
                 if (stop) {
                     return;
                 }
 
                 Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
-                batchId = message.getId();
-                size = message.getEntries().size();
-
-                if (batchId != -1 && size > 0) {
+                emptyMsg = isEmptyMsg(message);
+                if (!emptyMsg) {
                     handleEntry(message.getEntries());// 数据处理
                 }
 
+                long batchId = message.getId();
                 canalConnector.ack(batchId); // 提交确认
             }
 
-            if (batchId == -1 || size == 0) {
+            if (emptyMsg) {
                 Thread.sleep(1000);
             }
         }
 
     }
 
+    private boolean isEmptyMsg(Message message) {  // 是否空消息
+        if (message == null) {
+            return true;
+        }
+
+        long batchId = message.getId();
+        int size = message.getEntries().size();
+        if (batchId == -1 || size == 0) {
+            return true;
+        }
+
+        return false;
+    }
+
     private void initConnector() {
+        if (canalConnector == null) {
+            canalConnector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
+        }
         canalConnector.connect();
         canalConnector.subscribe();
         canalConnector.rollback();
-        log.info("canal 启动成功...");
+        log.info("canal client 启动成功...");
     }
 
     // 数据处理
@@ -161,7 +174,7 @@ public class EntryHandler implements ApplicationRunner {
                         handler.update(rowData);
                     }
                 } catch (Exception e) {
-                    log.error("canal 异常, dbName={}, tableName={}", dbName, tableName, e);
+                    log.error("canal client 异常, dbName={}, tableName={}", dbName, tableName, e);
                 }
 
             }
@@ -170,15 +183,16 @@ public class EntryHandler implements ApplicationRunner {
 
     public void disconnect() {
         if (canalConnector != null) {
-            log.info("canal disconnect...");
+            log.info("canal client disconnect...");
             canalConnector.disconnect();
         }
+        canalConnector = null;
     }
 
     public void stop() {
-        log.info("canal ready stop...");
+        log.info("canal client ready stop...");
         synchronized (doneLock) {
-            log.info("canal stop...");
+            log.info("canal client stop...");
             stop = true;
             disconnect();
         }
