@@ -18,13 +18,7 @@
         <dependency>
             <groupId>io.github.liwei0903nn</groupId>
             <artifactId>easy-canal</artifactId>
-            <version>3.21.0-SNAPSHOP</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>fastjson</artifactId>
-                    <groupId>com.alibaba</groupId>
-                </exclusion>
-            </exclusions>
+            <version>3.22.0-SNAPSHOP</version>
         </dependency>
 ```
 
