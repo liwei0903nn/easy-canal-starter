@@ -25,7 +25,7 @@ public class EntryHandler implements ApplicationRunner {
 
     private Boolean stop = false;
 
-    private Object doneLock = new Object();
+    private final Object doneLock = new Object();
 
     public static final int BATCH_SIZE = 10;
 
