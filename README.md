@@ -35,7 +35,7 @@ easy-canal:
   password:
 ```
 
-3. 继承 CommonHandler 类, 使用 CanalHandler 标记对应的数据库表名, 在对应的函数完成自己的业务逻辑
+3. 增加对应的实体类和处理类(CommonHandler), 使用 CanalHandler 标记对应的数据库表名, 在对应的函数完成自己的业务逻辑
 
 ```
 @Data
