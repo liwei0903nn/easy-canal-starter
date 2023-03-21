@@ -25,7 +25,7 @@ public class EntryHandler implements ApplicationRunner {
 
     private Boolean stop = false;
 
-    private final Object doneLock = new Object();
+//    private final Object doneLock = new Object();
 
     public static final int BATCH_SIZE = 10;
 
@@ -39,6 +39,8 @@ public class EntryHandler implements ApplicationRunner {
     private CanalConnector canalConnector;
 
     private Map<String, CommonHandler> tableHanlderMap = new HashMap<>();
+
+    private Thread consumeThread = null;
 
     @PostConstruct
     public void initTableMap() {
@@ -85,30 +87,40 @@ public class EntryHandler implements ApplicationRunner {
 
     }
 
-    private void consumeData() throws InterruptedException {
-        while (true) {
-            boolean emptyMsg = false;
-            synchronized (doneLock) {
-                if (stop) {
-                    return;
+    private void consumeData() throws Exception {
+        if (consumeThread == null) {
+            consumeThread = new Thread(() -> {
+                while (true) {
+                    boolean emptyMsg = false;
+                    if (stop) {
+                        return;
+                    }
+
+                    Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
+                    emptyMsg = isEmptyMsg(message);
+                    if (!emptyMsg) {
+                        handleEntry(message.getEntries());// 数据处理
+                    }
+
+                    long batchId = message.getId();
+                    canalConnector.ack(batchId); // 提交确认
+
+                    if (emptyMsg) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            log.error("consumeData error", e);
+                        }
+                    }
                 }
+            });
 
-                Message message = canalConnector.getWithoutAck(BATCH_SIZE); // 获取指定数量的数据
-                emptyMsg = isEmptyMsg(message);
-                if (!emptyMsg) {
-                    handleEntry(message.getEntries());// 数据处理
-                }
-
-                long batchId = message.getId();
-                canalConnector.ack(batchId); // 提交确认
-            }
-
-            if (emptyMsg) {
-                Thread.sleep(1000);
-            }
+            consumeThread.start();
+            consumeThread.join();
         }
 
     }
+
 
     private boolean isEmptyMsg(Message message) {  // 是否空消息
         if (message == null) {
@@ -191,11 +203,13 @@ public class EntryHandler implements ApplicationRunner {
 
     public void stop() {
         log.info("canal client ready stop...");
-        synchronized (doneLock) {
-            log.info("canal client stop...");
-            stop = true;
-            disconnect();
+        stop = true;
+        try {
+            consumeThread.join(60000);
+        } catch (InterruptedException e) {
+            log.error("canal client stop fail...", e);
         }
+        disconnect();
 
     }
 
