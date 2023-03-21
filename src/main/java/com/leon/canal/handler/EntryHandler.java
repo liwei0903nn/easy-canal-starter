@@ -116,13 +116,13 @@ public class EntryHandler implements ApplicationRunner {
             }, "canal-consumer");
 
             consumeThread.start();
+        }
 
-            while (!stop) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    log.error("consumeData error", e);
-                }
+        while (!stop) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.error("consumeData error", e);
             }
         }
 
