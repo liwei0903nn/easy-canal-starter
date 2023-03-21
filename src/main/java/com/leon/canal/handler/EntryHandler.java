@@ -113,10 +113,17 @@ public class EntryHandler implements ApplicationRunner {
                         }
                     }
                 }
-            });
+            }, "canal-consumer");
 
             consumeThread.start();
-            consumeThread.join();
+
+            while (!stop) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.error("consumeData error", e);
+                }
+            }
         }
 
     }
@@ -199,6 +206,7 @@ public class EntryHandler implements ApplicationRunner {
             canalConnector.disconnect();
         }
         canalConnector = null;
+        consumeThread = null;
     }
 
     public void stop() {
