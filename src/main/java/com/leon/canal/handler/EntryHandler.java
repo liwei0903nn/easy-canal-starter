@@ -58,7 +58,8 @@ public class EntryHandler implements ApplicationRunner {
 
     @PreDestroy
     public void destroy() {
-        new Thread(this::stop).start();
+//        new Thread(this::stop).start();
+        stop();
     }
 
 
