@@ -6,15 +6,9 @@
 使用方法:
 
 
-1. pom 引入(依赖fastjson)
+1. pom 引入
 
 ```
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.80</version>
-        </dependency>
-
         <dependency>
             <groupId>io.github.liwei0903nn</groupId>
             <artifactId>easy-canal</artifactId>
