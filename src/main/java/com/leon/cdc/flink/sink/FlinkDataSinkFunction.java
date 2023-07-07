@@ -7,11 +7,6 @@ import com.leon.cdc.service.HandlerService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 
-/**
- * @author liwei
- * @description
- * @date 2023/7/7 13:18
- */
 
 @Slf4j
 public class FlinkDataSinkFunction extends RichSinkFunction<String> {
