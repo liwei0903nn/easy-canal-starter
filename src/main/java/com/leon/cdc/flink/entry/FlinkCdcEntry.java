@@ -1,6 +1,7 @@
 package com.leon.cdc.flink.entry;
 
 import com.leon.cdc.config.EasyCdcConfig;
+import com.leon.cdc.flink.sink.FlinkDataSinkFunction;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import lombok.extern.slf4j.Slf4j;
@@ -10,11 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 
-/**
- * @author liwei
- * @description
- * @date 2023/7/7 11:02
- */
+
 
 @Slf4j
 public class FlinkCdcEntry implements ApplicationRunner {
@@ -54,12 +51,14 @@ public class FlinkCdcEntry implements ApplicationRunner {
 
             env.fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source")
                     .setParallelism(cdcConfig.getFlinkCdcConfig().getSourceParallelism())
-                    .print().setParallelism(cdcConfig.getFlinkCdcConfig().getSinkParallelism());
+                    .addSink(new FlinkDataSinkFunction())
+                    .setParallelism(cdcConfig.getFlinkCdcConfig().getSinkParallelism());
 
             env.execute();
         } catch (Exception e) {
             log.error("flink cdc error, config={}", cdcConfig, e);
         }
     }
+
 
 }

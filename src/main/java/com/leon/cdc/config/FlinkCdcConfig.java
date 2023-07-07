@@ -5,11 +5,6 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author liwei
- * @description
- * @date 2023/7/7 10:32
- */
 
 @Data
 public class FlinkCdcConfig {

@@ -12,11 +12,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
-/**
- * @author liwei
- * @description
- * @date 2023/3/29 15:10
- */
+
 public class FastjsonDeserializationSchema implements DebeziumDeserializationSchema<String> {
     @Override
     public void deserialize(SourceRecord record, Collector<String> out) throws Exception {
@@ -25,6 +21,7 @@ public class FastjsonDeserializationSchema implements DebeziumDeserializationSch
         String topic = record.topic();
         String[] source = StringUtils.split(topic, "\\.");
         result.put("tableName", source[1] + "." + source[2]);
+        result.put("operation", source);
 
         Struct value = (Struct) record.value();
         Struct before = value.getStruct("before");

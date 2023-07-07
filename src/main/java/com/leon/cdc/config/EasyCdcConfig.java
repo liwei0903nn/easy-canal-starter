@@ -4,11 +4,6 @@ import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * @author liwei
- * @description
- * @date 2023/7/7 10:15
- */
 
 @ConfigurationProperties(prefix = "easy-cdc")
 @Data

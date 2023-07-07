@@ -2,6 +2,7 @@ package com.leon.cdc.config;
 
 import com.leon.cdc.canal.entry.CanalEntry;
 import com.leon.cdc.flink.entry.FlinkCdcEntry;
+import com.leon.cdc.service.HandlerService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -27,5 +28,11 @@ public class EasyCdcAutoConfiguration {
         FlinkCdcEntry flinkCdcEntry = new FlinkCdcEntry();
         return flinkCdcEntry;
     }
+
+    @Bean
+    public HandlerService handlerService() {
+        return new HandlerService();
+    }
+
 
 }

@@ -5,7 +5,9 @@ import com.alibaba.otter.canal.client.CanalConnectors;
 import com.alibaba.otter.canal.protocol.Message;
 import com.leon.cdc.annotations.TableHandler;
 import com.leon.cdc.canal.handler.CanalHandler;
+import com.leon.cdc.common.CommonHandler;
 import com.leon.cdc.config.EasyCdcConfig;
+import com.leon.cdc.service.HandlerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -32,28 +34,17 @@ public class CanalEntry implements ApplicationRunner {
     private EasyCdcConfig canalConfig;
 
     @Autowired
-    private List<CanalHandler> handlerList;
+    private HandlerService handlerService;
+
 
 
     private CanalConnector canalConnector;
 
-    private Map<String, CanalHandler> tableHanlderMap = new HashMap<>();
+
 
     private Thread consumeThread = null;
 
-    @PostConstruct
-    public void initTableMap() {
-        for (CanalHandler commonHandler : handlerList) {
-            TableHandler tableHandler = commonHandler.getClass().getAnnotation(TableHandler.class);
-            if (tableHandler == null || tableHandler.tableName().isEmpty()) {
-                continue;
-            }
 
-            tableHanlderMap.put(tableHandler.tableName(), commonHandler);
-        }
-
-//        Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
-    }
 
     @PreDestroy
     public void destroy() {
@@ -177,8 +168,8 @@ public class CanalEntry implements ApplicationRunner {
             String tableName = entry.getHeader().getTableName();
 
 
-            CanalHandler canalHandler = tableHanlderMap.get(dbName + "." + tableName);
-            if (canalHandler == null) {
+            CanalHandler handler = (CanalHandler) handlerService.getTableHandler(dbName + "." + tableName);
+            if (handler == null) {
                 log.debug("暂不处理, dbName={}, tableName={}", dbName, tableName);
                 continue;
             }
@@ -186,11 +177,11 @@ public class CanalEntry implements ApplicationRunner {
             for (com.alibaba.otter.canal.protocol.CanalEntry.RowData rowData : rowChage.getRowDatasList()) {
                 try {
                     if (eventType == com.alibaba.otter.canal.protocol.CanalEntry.EventType.DELETE) {  // 删除
-                        canalHandler.delete(rowData);
+                        handler.delete(rowData);
                     } else if (eventType == com.alibaba.otter.canal.protocol.CanalEntry.EventType.INSERT) { // 新增
-                        canalHandler.insert(rowData);
+                        handler.insert(rowData);
                     } else if (eventType == com.alibaba.otter.canal.protocol.CanalEntry.EventType.UPDATE) { // 修改
-                        canalHandler.update(rowData);
+                        handler.update(rowData);
                     }
                 } catch (Exception e) {
                     log.error("canal client 异常, dbName={}, tableName={}", dbName, tableName, e);
