@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.leon.canal.config.EasyCanalAutoConfiguration
+  com.leon.cdc.config.EasyCdcAutoConfiguration

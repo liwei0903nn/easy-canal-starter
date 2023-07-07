@@ -1,6 +1,5 @@
-package com.leon.canal.annotations;
+package com.leon.cdc.annotations;
 
-import org.springframework.core.annotation.AliasFor;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.*;
@@ -11,7 +10,7 @@ import java.lang.annotation.*;
 @Inherited
 @Documented
 @Component
-public @interface CanalHandler {
+public @interface TableHandler {
 
     String tableName() default "";
 }
