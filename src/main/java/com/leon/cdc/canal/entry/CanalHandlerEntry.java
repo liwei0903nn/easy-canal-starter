@@ -3,8 +3,10 @@ package com.leon.cdc.canal.entry;
 import com.alibaba.otter.canal.client.CanalConnector;
 import com.alibaba.otter.canal.client.CanalConnectors;
 import com.alibaba.otter.canal.protocol.Message;
-import com.leon.cdc.canal.handler.CanalHandler;
+import com.leon.cdc.canal.converter.CanalConverter;
+import com.leon.cdc.config.CanalConfig;
 import com.leon.cdc.config.EasyCdcConfig;
+import com.leon.cdc.handler.CommonHandler;
 import com.leon.cdc.handler.HandlerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,19 +28,16 @@ public class CanalHandlerEntry implements ApplicationRunner {
     public static final int BATCH_SIZE = 10;
 
     @Autowired
-    private EasyCdcConfig canalConfig;
+    private EasyCdcConfig cdcConfig;
 
     @Autowired
     private HandlerManager handlerManager;
 
 
-
     private CanalConnector canalConnector;
 
 
-
     private Thread consumeThread = null;
-
 
 
     @PreDestroy
@@ -56,7 +55,7 @@ public class CanalHandlerEntry implements ApplicationRunner {
                     initConnector(); // 创建链接
                     consumeData(); // 消费数据
                 } catch (Exception e) {
-                    log.error("canal 异常, canalConfig={}", canalConfig, e);
+                    log.error("canal 异常, cdcConfig={}", cdcConfig, e);
                 } finally {
                     disconnect();
                 }
@@ -131,7 +130,8 @@ public class CanalHandlerEntry implements ApplicationRunner {
 
     private void initConnector() {
         if (canalConnector == null) {
-            canalConnector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getCanal().getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
+            CanalConfig canalConfig = cdcConfig.getCanal();
+            canalConnector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getCanalServerHost(), canalConfig.getCanalServerPort()), canalConfig.getDestination(), canalConfig.getCanalUsername(), canalConfig.getCanalPassword());
         }
         canalConnector.connect();
         canalConnector.subscribe();
@@ -163,7 +163,7 @@ public class CanalHandlerEntry implements ApplicationRunner {
             String tableName = entry.getHeader().getTableName();
 
 
-            CanalHandler handler = (CanalHandler) handlerManager.getTableHandler(dbName + "." + tableName);
+            CommonHandler handler = handlerManager.getTableHandler(dbName + "." + tableName);
             if (handler == null) {
                 log.debug("暂不处理, dbName={}, tableName={}", dbName, tableName);
                 continue;
@@ -172,11 +172,12 @@ public class CanalHandlerEntry implements ApplicationRunner {
             for (com.alibaba.otter.canal.protocol.CanalEntry.RowData rowData : rowChage.getRowDatasList()) {
                 try {
                     if (eventType == com.alibaba.otter.canal.protocol.CanalEntry.EventType.DELETE) {  // 删除
-                        handler.delete(rowData);
+                        handler.onDelete(CanalConverter.convert(rowData.getBeforeColumnsList(), handler));
                     } else if (eventType == com.alibaba.otter.canal.protocol.CanalEntry.EventType.INSERT) { // 新增
-                        handler.insert(rowData);
+                        handler.onInsert(CanalConverter.convert(rowData.getAfterColumnsList(), handler));
                     } else if (eventType == com.alibaba.otter.canal.protocol.CanalEntry.EventType.UPDATE) { // 修改
-                        handler.update(rowData);
+                        handler.onUpdate(CanalConverter.convert(rowData.getBeforeColumnsList(), handler),
+                                CanalConverter.convert(rowData.getAfterColumnsList(), handler));
                     }
                 } catch (Exception e) {
                     log.error("canal client 异常, dbName={}, tableName={}", dbName, tableName, e);

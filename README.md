@@ -12,7 +12,7 @@
         <dependency>
             <groupId>io.github.liwei0903nn</groupId>
             <artifactId>easy-canal</artifactId>
-            <version>5.0.7-SNAPSHOP</version>
+            <version>5.0.8-SNAPSHOP</version>
         </dependency>
 ```
 

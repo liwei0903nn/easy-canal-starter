@@ -17,13 +17,7 @@ public class EasyCdcConfig {
 
     private boolean logRawData = false;
 
-    private String host;
 
-    private Integer port;
-
-    private String username;
-
-    private String password;
 
 
     private CanalConfig canal;

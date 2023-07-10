@@ -1,6 +1,7 @@
 package com.leon.cdc.flink.entry;
 
 import com.leon.cdc.config.EasyCdcConfig;
+import com.leon.cdc.config.FlinkCdcConfig;
 import com.leon.cdc.flink.sink.FlinkDataSinkFunction;
 import com.leon.cdc.handler.HandlerManager;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
@@ -20,9 +21,6 @@ public class FlinkCdcEntry implements ApplicationRunner {
     @Autowired
     private EasyCdcConfig cdcConfig;
 
-    @Autowired
-    private HandlerManager handlerManager;
-
     @Override
     public void run(ApplicationArguments args) throws Exception {
         new Thread(this::flinkCdcRun, "flink-worker").start();
@@ -30,13 +28,14 @@ public class FlinkCdcEntry implements ApplicationRunner {
 
     public void flinkCdcRun() {
         try {
+            FlinkCdcConfig flinkCdcConfig = cdcConfig.getFlink();
             MySqlSource<String> mySqlSource = MySqlSource.<String>builder()
-                    .hostname(cdcConfig.getHost())
-                    .port(cdcConfig.getPort())
-                    .username(cdcConfig.getUsername())
-                    .password(cdcConfig.getPassword())
-                    .databaseList(cdcConfig.getFlink().getDatabaseList().toArray(new String[0])) // set captured database
-                    .tableList(cdcConfig.getFlink().getTableList().toArray(new String[0])) // set captured table
+                    .hostname(flinkCdcConfig.getDbHost())
+                    .port(flinkCdcConfig.getDbPort())
+                    .username(flinkCdcConfig.getDbUsername())
+                    .password(flinkCdcConfig.getDbPassword())
+                    .databaseList(flinkCdcConfig.getDatabaseList().toArray(new String[0])) // set captured database
+                    .tableList(flinkCdcConfig.getTableList().toArray(new String[0])) // set captured table
                     .deserializer(new FastjsonDeserializationSchema())
                     .startupOptions(StartupOptions.latest())
                     .build();
@@ -54,9 +53,9 @@ public class FlinkCdcEntry implements ApplicationRunner {
 //            env.getCheckpointConfig().setMaxConcurrentCheckpoints(1); // 同一时间只允许1个Checkpoint的操作在执行
 
             env.fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source")
-                    .setParallelism(cdcConfig.getFlink().getSourceParallelism())
+                    .setParallelism(flinkCdcConfig.getSourceParallelism())
                     .addSink(new FlinkDataSinkFunction())
-                    .setParallelism(cdcConfig.getFlink().getSinkParallelism());
+                    .setParallelism(flinkCdcConfig.getSinkParallelism());
 
             log.info("flink cdc 正在启动...");
             env.execute();

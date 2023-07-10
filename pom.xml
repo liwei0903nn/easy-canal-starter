@@ -15,7 +15,7 @@
 
     <groupId>io.github.liwei0903nn</groupId>
     <artifactId>easy-canal</artifactId>
-    <version>5.0.7-SNAPSHOP</version>
+    <version>5.0.8-SNAPSHOP</version>
 
 
     <!--项目信息...-->
@@ -144,7 +144,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <flink.version>1.13.5</flink.version>
+        <flink-connector-mysql-cdc.version>2.1.1</flink-connector-mysql-cdc.version>
         <scala.binary.version>2.12</scala.binary.version>
+        <canal.version>1.1.6</canal.version>
+        <fastjson.version>1.2.80</fastjson.version>
     </properties>
 
     <dependencies>
@@ -177,17 +180,28 @@
         <dependency>
             <groupId>com.alibaba.otter</groupId>
             <artifactId>canal.client</artifactId>
-            <version>1.1.6</version>
+            <version>${canal.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>spring-jdbc</artifactId>
+                    <groupId>org.springframework</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.alibaba.otter</groupId>
             <artifactId>canal.protocol</artifactId>
-            <version>1.1.6</version>
+            <version>${canal.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>fastjson2</artifactId>
                     <groupId>com.alibaba.fastjson2</groupId>
+                </exclusion>
+
+                <exclusion>
+                    <artifactId>spring-jdbc</artifactId>
+                    <groupId>org.springframework</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -195,7 +209,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.80</version>
+            <version>${fastjson.version}</version>
         </dependency>
 
 
@@ -204,7 +218,7 @@
             <!-- add the dependency matching your database -->
             <artifactId>flink-connector-mysql-cdc</artifactId>
             <!-- the dependency is available only for stable releases. -->
-            <version>2.1.1</version>
+            <version>${flink-connector-mysql-cdc.version}</version>
         </dependency>
 
         <dependency>
