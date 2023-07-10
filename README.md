@@ -1,6 +1,6 @@
 ```
 # easy-canal
-基于spring boot 的 canal 客户端, 一分钟快速接入canal client。
+监听mysql binlog变动, 可以选择使用canal(需要提前部署canal服务端)或者flink cdc
 ```
 
 使用方法:
@@ -12,7 +12,7 @@
         <dependency>
             <groupId>io.github.liwei0903nn</groupId>
             <artifactId>easy-canal</artifactId>
-            <version>4.0.0-SNAPSHOP</version>
+            <version>5.0.7-SNAPSHOP</version>
         </dependency>
 ```
 
@@ -21,19 +21,26 @@
 2. 配置文件增加 canal 配置
 
 ```
-easy-canal:
-  host: 127.0.0.1
-  port: 11111 
-  destination: example
-  username: 
-  password:
+easy-cdc:
+  enable: true     #cdc开启
+  type: flink      #cdc类型, 可选flink或者canal(需要提前部署canal服务端)
+  host: localhost  #数据库地址 
+  port: 3306       #数据库端口
+  username: root   #数据库用户
+  password: root   #数据库密码
+  flink:
+    databaseList:  #flink 需要监听的数据库列表
+      - test
+    tableList:     #flink 需要监听的表, 不能只写表名,  需要使用完整的 数据库.表名
+      - test.student
 ```
 
-3. 增加对应的实体类和处理类(CommonHandler), 使用 CanalHandler 标记对应的数据库表名, 在对应的函数完成自己的业务逻辑
+3. 增加对应的实体类和处理类(CommonHandler), 使用 TableHandler 标记对应的数据库表名, 在对应的函数完成自己的业务逻辑
 
+数据库实体类
 ```
 @Data
-public class UserInfo {
+public class Student {
    
     private Long id;
 
@@ -43,38 +50,28 @@ public class UserInfo {
 }
 ```
 
-
+数据库变更处理类
 ```
-@CanalHandler("testdb.user_info")  // 注意这里需要使用 数据库.表名
+@TableHandler(tableName = "test.student")
 @Slf4j
-public class HospitalHandler extends CommonHandler<UserInfo> {
+public class StudentHandler extends CommonHandler<Student> {
 
-
-    // 新增
     @Override
-    public boolean onInsert(UserInfo newData) {
+    public boolean onInsert(Student newData) {  //新增
+        log.info("student insert: {}", newData);
         return true;
     }
 
-    /**
-     * 修改
-     *
-     * @param oldData 修改前的数据
-     * @param newData 修改后的数据
-     * @return
-     */
-
     @Override
-    public boolean onUpdate(UserInfo oldData, UserInfo newData) {
+    public boolean onUpdate(Student oldData, Student newData) { //修改
+        log.info("student update: {}, {}", oldData, newData);
         return true;
     }
 
-    // 删除
     @Override
-    public boolean onDelete(UserInfo data) {
+    public boolean onDelete(Student data) {    //删除
+        log.info("student delete: {}", data);
         return true;
     }
-
-
 }
 ```

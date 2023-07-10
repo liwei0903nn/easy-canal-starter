@@ -2,7 +2,7 @@ package com.leon.cdc.canal.handler;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.otter.canal.protocol.CanalEntry;
-import com.leon.cdc.common.CommonHandler;
+import com.leon.cdc.handler.CommonHandler;
 
 import java.util.List;
 

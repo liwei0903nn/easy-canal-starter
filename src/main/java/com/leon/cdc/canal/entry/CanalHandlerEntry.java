@@ -3,26 +3,21 @@ package com.leon.cdc.canal.entry;
 import com.alibaba.otter.canal.client.CanalConnector;
 import com.alibaba.otter.canal.client.CanalConnectors;
 import com.alibaba.otter.canal.protocol.Message;
-import com.leon.cdc.annotations.TableHandler;
 import com.leon.cdc.canal.handler.CanalHandler;
-import com.leon.cdc.common.CommonHandler;
 import com.leon.cdc.config.EasyCdcConfig;
-import com.leon.cdc.service.HandlerService;
+import com.leon.cdc.handler.HandlerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 @Slf4j
-public class CanalEntry implements ApplicationRunner {
+public class CanalHandlerEntry implements ApplicationRunner {
 
     private Boolean stop = false;
 
@@ -34,7 +29,7 @@ public class CanalEntry implements ApplicationRunner {
     private EasyCdcConfig canalConfig;
 
     @Autowired
-    private HandlerService handlerService;
+    private HandlerManager handlerManager;
 
 
 
@@ -136,7 +131,7 @@ public class CanalEntry implements ApplicationRunner {
 
     private void initConnector() {
         if (canalConnector == null) {
-            canalConnector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getCanalConfig().getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
+            canalConnector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalConfig.getHost(), canalConfig.getPort()), canalConfig.getCanal().getDestination(), canalConfig.getUsername(), canalConfig.getPassword());
         }
         canalConnector.connect();
         canalConnector.subscribe();
@@ -168,7 +163,7 @@ public class CanalEntry implements ApplicationRunner {
             String tableName = entry.getHeader().getTableName();
 
 
-            CanalHandler handler = (CanalHandler) handlerService.getTableHandler(dbName + "." + tableName);
+            CanalHandler handler = (CanalHandler) handlerManager.getTableHandler(dbName + "." + tableName);
             if (handler == null) {
                 log.debug("暂不处理, dbName={}, tableName={}", dbName, tableName);
                 continue;

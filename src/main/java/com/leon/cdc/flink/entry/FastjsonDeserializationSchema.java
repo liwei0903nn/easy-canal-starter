@@ -3,6 +3,7 @@ package com.leon.cdc.flink.entry;
 import com.alibaba.fastjson.JSONObject;
 import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
 import io.debezium.data.Envelope;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -13,9 +14,11 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
 
+@Slf4j
 public class FastjsonDeserializationSchema implements DebeziumDeserializationSchema<String> {
     @Override
     public void deserialize(SourceRecord record, Collector<String> out) throws Exception {
+
         JSONObject result = new JSONObject();
 
         String topic = record.topic();
@@ -48,6 +51,7 @@ public class FastjsonDeserializationSchema implements DebeziumDeserializationSch
         Envelope.Operation operation = Envelope.operationFor(record);
         result.put("operation", operation.toString());
 
+//        log.info("flink cdc binlog 数据, result={}", result);
         out.collect(result.toJSONString());
     }
 

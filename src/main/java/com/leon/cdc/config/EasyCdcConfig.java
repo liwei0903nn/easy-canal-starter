@@ -1,6 +1,5 @@
 package com.leon.cdc.config;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -8,6 +7,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "easy-cdc")
 @Data
 public class EasyCdcConfig {
+
+    public static final String FLINK_TYPE = "flink";
+    public static final String CANAL_TYPE = "canal";
+
+    private boolean enable = true;
+
+    private String type = FLINK_TYPE;
+
+    private boolean logRawData = false;
 
     private String host;
 
@@ -17,9 +25,8 @@ public class EasyCdcConfig {
 
     private String password;
 
-    @JSONField(name = "canal")
-    private CanalConfig canalConfig;
 
-    @JSONField(name = "flink")
-    private FlinkCdcConfig flinkCdcConfig;
+    private CanalConfig canal;
+
+    private FlinkCdcConfig flink;
 }

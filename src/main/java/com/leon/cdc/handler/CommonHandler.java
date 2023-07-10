@@ -1,4 +1,4 @@
-package com.leon.cdc.common;
+package com.leon.cdc.handler;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
