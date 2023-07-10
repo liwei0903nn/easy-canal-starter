@@ -22,17 +22,22 @@
 
 ```
 easy-cdc:
-  enable: true     #cdc开启
-  type: flink      #cdc类型, 可选flink或者canal(需要提前部署canal服务端)
-  host: localhost  #数据库地址 
-  port: 3306       #数据库端口
-  username: root   #数据库用户
-  password: root   #数据库密码
+  enable: true         #cdc开启
+  type: flink          #cdc类型, 可选flink或者canal(需要提前部署canal服务端)
   flink:
-    databaseList:  #flink 需要监听的数据库列表
+    dbHost: localhost  #数据库地址 
+    dbPort: 3306       #数据库端口
+    dbUserName: root   #数据库用户
+    dbPassword: root   #数据库密码
+    databaseList:      #flink 需要监听的数据库列表
       - test
-    tableList:     #flink 需要监听的表, 不能只写表名,  需要使用完整的 数据库.表名
+    tableList:         #flink 需要监听的表, 不能只写表名,  需要使用完整的 数据库.表名
       - test.student
+  canal:
+    canalServerHost: localhost   #canal服务端地址
+    canalServerPort: 11111       #canal服务端端口
+    destination: example         #canal instance
+    
 ```
 
 3. 增加对应的实体类和处理类(CommonHandler), 使用 TableHandler 标记对应的数据库表名, 在对应的函数完成自己的业务逻辑
